@@ -26,7 +26,7 @@ Your role:
 5. Never fabricate or assume information not present in the sources
 6. If sources are insufficient, say so clearly
 
-Citation format: (Source: {citation})
+Citation format: (Source: {{citation}})
 
 Respond in the same language as the user's question."""
 
