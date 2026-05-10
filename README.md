@@ -20,6 +20,14 @@ The internet is flooded with decontextualized, fabricated, and often dangerous "
 
 **Vaidya** is a highly disciplined Retrieval-Augmented Generation (RAG) system that democratizes this ancient knowledge without compromising integrity. It retrieves exact verses from the original Sanskrit text, translates them seamlessly into the user's language, and provides verifiable citations.
 
+> **⚠️ Important Note Regarding the Live Demo**
+> 
+> Vaidya was fully developed, deployed, and tested on an **AMD Instinct™ MI300X GPU (192GB VRAM)** via a DigitalOcean droplet. This massive compute allowed us to serve the 72-Billion parameter Qwen2.5-72B-Instruct model with blazing-fast inference (~1,790 tokens/sec throughput). 
+> 
+> As per hackathon guidelines, because AMD GPU droplets bill continuously, the backend cloud instance hosting our LLM and vector database has been destroyed to conserve limited credits. As a result, this Hugging Face Space currently serves as a frontend landing page, and live search queries will timeout. 
+> 
+> **🎬 Please watch the Demo Video provided in our lablab.ai submission to see the complete, cross-lingual RAG system working flawlessly in real-time.**
+
 ## ✨ Key Features
 * **Zero-Hallucination Policy:** Vaidya utilizes a strict Confidence Gate (cosine similarity threshold of 0.72). If a query lacks a direct textual source, the system refuses to answer rather than fabricating medical advice.
 * **Traceable Citations:** Every factual claim is appended with its exact structural source (e.g., `[CS.Su.1.24]` -> *Caraka-Samhita, Sutrasthana, Chapter 1, Verse 24*).
@@ -57,7 +65,7 @@ If you wish to run the pipeline locally (Requires AMD ROCm compatible GPU):
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/Kalpesh-ops/vaidya.git](https://github.com/Kalpesh-ops/vaidya.git)
+git clone https://github.com/Kalpesh-ops/vaidya.git
 cd vaidya
 
 # 2. Setup Environment
@@ -76,6 +84,8 @@ python -m src.api.main
 
 # 5. Launch the UI
 streamlit run app.py
+
+```
 
 ## ⚠️ Disclaimer
 
