@@ -12,6 +12,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import JsonOutputParser
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 # --- Data Models ---
 
 class TranslatedChunk(BaseModel):
@@ -72,40 +74,48 @@ class QwenTranslator:
             chunks_data = [json.loads(line) for line in f]
             
         translated_chunks = []
-        
-        logger.info(f"Translating {len(chunks_data)} chunks...")
+        logger.info(f"Translating {len(chunks_data)} chunks concurrently...")
         
         # Ensure output directory exists
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Open in append mode so if it crashes, we don't lose progress
+        # Helper function to process a single chunk
+        def _translate_single(chunk: Dict[str, Any]) -> TranslatedChunk | None:
+            try:
+                response = self.chain.invoke({
+                    "sanskrit_text": chunk["text_sanskrit"],
+                    "format_instructions": self.parser.get_format_instructions()
+                })
+                
+                return TranslatedChunk(
+                    chunk_id=chunk["chunk_id"],
+                    sthana=chunk["sthana"],
+                    adhyaya=chunk["adhyaya"],
+                    text_sanskrit=chunk["text_sanskrit"],
+                    text_english=response["english_translation"],
+                    text_hindi=response["hindi_translation"],
+                    citations=chunk["citations"],
+                    verse_ids=chunk["verse_ids"],
+                    token_count=chunk["token_count"]
+                )
+            except Exception as e:
+                logger.error(f"Translation failed for chunk {chunk['chunk_id']}: {e}")
+                return None
+
+        # Open in write mode to start fresh (overwriting the 3 chunks you just did)
         with open(self.output_path, 'w', encoding='utf-8') as out_f:
-            for chunk in tqdm(chunks_data, desc="Translating"):
-                try:
-                    response = self.chain.invoke({
-                        "sanskrit_text": chunk["text_sanskrit"],
-                        "format_instructions": self.parser.get_format_instructions()
-                    })
-                    
-                    translated = TranslatedChunk(
-                        chunk_id=chunk["chunk_id"],
-                        sthana=chunk["sthana"],
-                        adhyaya=chunk["adhyaya"],
-                        text_sanskrit=chunk["text_sanskrit"],
-                        text_english=response["english_translation"],
-                        text_hindi=response["hindi_translation"],
-                        citations=chunk["citations"],
-                        verse_ids=chunk["verse_ids"],
-                        token_count=chunk["token_count"]
-                    )
-                    
-                    translated_chunks.append(translated)
-                    out_f.write(translated.model_dump_json() + '\n')
-                    
-                except Exception as e:
-                    logger.error(f"Translation failed for chunk {chunk['chunk_id']}: {e}")
-                    # In a production system, we'd log this to a retry queue.
-                    
+            # Blast the vLLM server with 64 concurrent requests
+            with ThreadPoolExecutor(max_workers=64) as executor:
+                future_to_chunk = {executor.submit(_translate_single, chunk): chunk for chunk in chunks_data}
+                
+                for future in tqdm(as_completed(future_to_chunk), total=len(chunks_data), desc="Translating"):
+                    translated = future.result()
+                    if translated:
+                        translated_chunks.append(translated)
+                        # Write immediately so progress is saved
+                        out_f.write(translated.model_dump_json() + '\n')
+                        out_f.flush()
+                        
         return translated_chunks
 
 # --- Stage 3 Benchmark ---
