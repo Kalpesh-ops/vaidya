@@ -37,14 +37,14 @@ class VaidyaRetriever:
                 )]
             )
 
-        hits = self.client.search(
+        hits = self.client.query_points(
             collection_name=COLLECTION_NAME,
-            query_vector=query_embedding.tolist(),
+            query=query_embedding.tolist(),
             limit=top_k,
             query_filter=search_filter,
             with_payload=True,
             score_threshold=CONFIDENCE_THRESHOLD
-        )
+        ).points
 
         results = []
         for hit in hits:
