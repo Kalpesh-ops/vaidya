@@ -152,11 +152,22 @@ if __name__ == "__main__":
     INPUT_FILE = "data/processed/chunks.jsonl"
     OUTPUT_FILE = "data/processed/translations_cache.jsonl"
     
-    # We will NOT execute the translation right now locally as it requires the LLM endpoint.
-    logger.info("Translator script loaded. Awaiting LLM endpoint to execute.")
+    translator = QwenTranslator(input_path=INPUT_FILE, output_path=OUTPUT_FILE)
+    translated_data = translator.process_chunks()
     
-    # To run when GPU is ready:
-    # translator = QwenTranslator(input_path=INPUT_FILE, output_path=OUTPUT_FILE)
-    # translated_data = translator.process_chunks()
-    # bench = TranslatorBenchmark(translated_data)
-    # print(bench.run())
+    bench = TranslatorBenchmark(translated_data)
+    results = bench.run()
+    
+    print("\n=== STAGE 3 BENCHMARK RESULTS ===")
+    for k, v in results.items():
+        print(f"  {k}: {v}")
+
+    status = "✓ PASS" if results.get("PASS", False) else "✗ FAIL"
+    print(f"\nOverall: {status}")
+
+    # Append to benchmark report
+    with open("benchmark_report.md", "a", encoding="utf-8") as f:
+        f.write("## Stage 3: Translator\n\n")
+        for k, v in results.items():
+            f.write(f"- **{k}**: {v}\n")
+        f.write("\n")
