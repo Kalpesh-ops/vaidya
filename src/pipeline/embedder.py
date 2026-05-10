@@ -124,11 +124,11 @@ class EmbedderBenchmark:
         retrieval_ok = True
         for q in test_queries:
             emb = model.encode([q], normalize_embeddings=True)
-            hits = self.client.search(
+            hits = self.client.query_points(
                 collection_name=COLLECTION_NAME,
-                query_vector=emb[0].tolist(),
+                query=emb[0].tolist(),
                 limit=3
-            )
+            ).points
             if not hits:
                 retrieval_ok = False
                 logger.warning(f"No results for query: {q}")
