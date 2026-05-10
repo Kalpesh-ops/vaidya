@@ -105,7 +105,7 @@ class QwenTranslator:
         # Open in write mode to start fresh (overwriting the 3 chunks you just did)
         with open(self.output_path, 'w', encoding='utf-8') as out_f:
             # Blast the vLLM server with 64 concurrent requests
-            with ThreadPoolExecutor(max_workers=64) as executor:
+            with ThreadPoolExecutor(max_workers=256) as executor:
                 future_to_chunk = {executor.submit(_translate_single, chunk): chunk for chunk in chunks_data}
                 
                 for future in tqdm(as_completed(future_to_chunk), total=len(chunks_data), desc="Translating"):
