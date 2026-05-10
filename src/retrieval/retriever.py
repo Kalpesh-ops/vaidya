@@ -7,7 +7,7 @@ from qdrant_client import QdrantClient
 
 COLLECTION_NAME = "vaidya_caraka"
 EMBEDDING_MODEL = "intfloat/multilingual-e5-large"
-CONFIDENCE_THRESHOLD = 0.60
+CONFIDENCE_THRESHOLD = 0.80
 
 
 class VaidyaRetriever:
